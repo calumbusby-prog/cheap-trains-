@@ -61,21 +61,82 @@ def find_cheapest_weekend_deal(
     )
 
 
-def format_alert(route: RouteConfig, deal: RoundTripDeal) -> tuple[str, str]:
+def _format_date(d: date) -> str:
+    return d.strftime("%a %d %b %Y")
+
+
+def _format_time(offer: Offer) -> str:
+    return offer.departure_time or "time TBD"
+
+
+def format_alert(route: RouteConfig, deal: RoundTripDeal) -> tuple[str, str, str]:
+    """Returns (subject, plain_text_body, html_body)."""
     subject = f"Cheap weekend fare: {route.name} - {deal.total_price:.2f} {route.currency}"
-    lines = [
-        f"{route.name} weekend trip for {deal.total_price:.2f} {route.currency} "
-        f"(threshold {route.max_total_price:.2f} {route.currency})",
-        f"Outbound: {deal.outbound_date.isoformat()} "
-        f"({deal.outbound_offer.departure_time or 'time TBD'}) - "
-        f"{deal.outbound_offer.price:.2f} {deal.outbound_offer.currency}",
-        f"Return:   {deal.return_date.isoformat()} "
-        f"({deal.return_offer.departure_time or 'time TBD'}) - "
-        f"{deal.return_offer.price:.2f} {deal.return_offer.currency}",
+
+    legs = [
+        ("Outbound", deal.outbound_date, deal.outbound_offer),
+        ("Return", deal.return_date, deal.return_offer),
     ]
+
+    label_width = max(len(label) for label, _, _ in legs)
+    date_width = max(len(_format_date(d)) for _, d, _ in legs)
+    text_lines = [
+        f"{route.name}",
+        f"{deal.total_price:.2f} {route.currency} total "
+        f"(threshold {route.max_total_price:.2f} {route.currency})",
+        "",
+    ]
+    for label, leg_date, offer in legs:
+        text_lines.append(
+            f"{label:<{label_width}}  {_format_date(leg_date):<{date_width}}  "
+            f"{_format_time(offer):>5}  {offer.price:>8.2f} {offer.currency}"
+        )
     if deal.outbound_offer.url:
-        lines.append(f"Book: {deal.outbound_offer.url}")
-    return subject, "\n".join(lines)
+        text_lines += ["", f"Book: {deal.outbound_offer.url}"]
+    text = "\n".join(text_lines)
+
+    rows_html = "".join(
+        f"""
+        <tr>
+          <td style="padding:10px 14px;border-bottom:1px solid #e5e5e5;color:#555;">{label}</td>
+          <td style="padding:10px 14px;border-bottom:1px solid #e5e5e5;">{_format_date(leg_date)}</td>
+          <td style="padding:10px 14px;border-bottom:1px solid #e5e5e5;">{_format_time(offer)}</td>
+          <td style="padding:10px 14px;border-bottom:1px solid #e5e5e5;text-align:right;font-weight:600;">{offer.price:.2f} {offer.currency}</td>
+        </tr>"""
+        for label, leg_date, offer in legs
+    )
+    book_html = (
+        f'<p style="margin:16px 0 0;"><a href="{deal.outbound_offer.url}" '
+        f'style="color:#0b5fff;">Book this trip &rarr;</a></p>'
+        if deal.outbound_offer.url
+        else ""
+    )
+    html = f"""
+    <div style="font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;max-width:480px;">
+      <h2 style="margin:0 0 4px;font-size:18px;">{route.name}</h2>
+      <p style="margin:0 0 16px;font-size:26px;font-weight:700;color:#0a8a3c;">
+        {deal.total_price:.2f} {route.currency}
+        <span style="font-size:13px;font-weight:400;color:#777;">
+          &nbsp;(threshold {route.max_total_price:.2f} {route.currency})
+        </span>
+      </p>
+      <table style="border-collapse:collapse;width:100%;">
+        <thead>
+          <tr style="background:#f7f7f7;text-align:left;">
+            <th style="padding:8px 14px;font-size:12px;text-transform:uppercase;color:#888;">Leg</th>
+            <th style="padding:8px 14px;font-size:12px;text-transform:uppercase;color:#888;">Date</th>
+            <th style="padding:8px 14px;font-size:12px;text-transform:uppercase;color:#888;">Time</th>
+            <th style="padding:8px 14px;font-size:12px;text-transform:uppercase;color:#888;text-align:right;">Price</th>
+          </tr>
+        </thead>
+        <tbody>{rows_html}
+        </tbody>
+      </table>
+      {book_html}
+    </div>
+    """
+
+    return subject, text, html
 
 
 def run_once(
@@ -106,10 +167,10 @@ def run_once(
             if not store.should_alert(route.name, deal.outbound_date, deal.return_date, deal.total_price):
                 continue
 
-            subject, message = format_alert(route, deal)
+            subject, text, html = format_alert(route, deal)
             for notifier in notifiers:
                 try:
-                    notifier.send(subject, message)
+                    notifier.send(subject, text, html)
                 except Exception:  # noqa: BLE001
                     logger.exception("Notifier %s failed to send alert", type(notifier).__name__)
             store.record_alert(route.name, deal.outbound_date, deal.return_date, deal.total_price)

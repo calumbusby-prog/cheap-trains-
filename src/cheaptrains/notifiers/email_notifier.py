@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import smtplib
 from email.message import EmailMessage
+from typing import Optional
 
 from . import Notifier
 
@@ -25,12 +26,14 @@ class EmailNotifier(Notifier):
         self.to_addrs = to_addrs
         self.use_tls = use_tls
 
-    def send(self, subject: str, message: str) -> None:
+    def send(self, subject: str, message: str, html: Optional[str] = None) -> None:
         email_msg = EmailMessage()
         email_msg["Subject"] = subject
         email_msg["From"] = self.from_addr
         email_msg["To"] = ", ".join(self.to_addrs)
         email_msg.set_content(message)
+        if html:
+            email_msg.add_alternative(html, subtype="html")
 
         with smtplib.SMTP(self.smtp_host, self.smtp_port, timeout=30) as smtp:
             if self.use_tls:
