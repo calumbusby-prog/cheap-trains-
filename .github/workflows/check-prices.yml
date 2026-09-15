@@ -2,10 +2,12 @@ name: Check cheap weekend train fares
 
 on:
   schedule:
-    # Every 3 hours. Adjust to taste -- more frequent runs find drops
-    # sooner but hit renfe.com more (and mock mode has no reason to run
-    # this often at all).
-    - cron: "17 */3 * * *"
+    # Every 6 hours. With 12 routes and the renfe provider doing one page
+    # load per candidate date per leg, a run takes a while -- adjust to
+    # taste, but going much more frequent starts overlapping runs (and
+    # hits renfe.com harder for no real benefit; mock mode has no reason
+    # to run this often at all).
+    - cron: "17 */6 * * *"
   workflow_dispatch: {}
 
 jobs:

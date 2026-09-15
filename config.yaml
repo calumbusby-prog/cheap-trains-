@@ -12,8 +12,13 @@ weekend:
   outbound_days: [FRI, SAT]
   # Days to consider for the return leg: SUN and/or MON.
   return_days: [SUN, MON]
-  # How many upcoming weekends to check each run.
-  lookahead_weekends: 8
+  # How many upcoming weekends to check each run. Kept lower than before
+  # now that there are more routes: the renfe provider does one page load
+  # per candidate date per leg, so runtime scales with
+  # routes x lookahead_weekends x candidate dates. With 12 routes and the
+  # default FRI/SAT + SUN/MON candidates, 4 weekends is ~380 page loads a
+  # run; raise it if you don't mind slower/heavier runs.
+  lookahead_weekends: 4
 
 routes:
   - name: "Madrid -> Barcelona"
@@ -32,6 +37,60 @@ routes:
     origin: "Barcelona"
     destination: "Valencia"
     max_total_price: 35
+    currency: EUR
+
+  - name: "Madrid -> Valencia"
+    origin: "Madrid"
+    destination: "Valencia"
+    max_total_price: 40
+    currency: EUR
+
+  - name: "Madrid -> Malaga"
+    origin: "Madrid"
+    destination: "Malaga"
+    max_total_price: 70
+    currency: EUR
+
+  - name: "Madrid -> Alicante"
+    origin: "Madrid"
+    destination: "Alicante"
+    max_total_price: 45
+    currency: EUR
+
+  - name: "Madrid -> Zaragoza"
+    origin: "Madrid"
+    destination: "Zaragoza"
+    max_total_price: 30
+    currency: EUR
+
+  - name: "Madrid -> Granada"
+    origin: "Madrid"
+    destination: "Granada"
+    max_total_price: 60
+    currency: EUR
+
+  - name: "Madrid -> Cordoba"
+    origin: "Madrid"
+    destination: "Cordoba"
+    max_total_price: 40
+    currency: EUR
+
+  - name: "Barcelona -> Sevilla"
+    origin: "Barcelona"
+    destination: "Sevilla"
+    max_total_price: 90
+    currency: EUR
+
+  - name: "Barcelona -> Malaga"
+    origin: "Barcelona"
+    destination: "Malaga"
+    max_total_price: 90
+    currency: EUR
+
+  - name: "Sevilla -> Malaga"
+    origin: "Sevilla"
+    destination: "Malaga"
+    max_total_price: 40
     currency: EUR
 
 notifications:
