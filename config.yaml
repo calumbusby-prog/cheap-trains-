@@ -1,0 +1,55 @@
+# Copy this to config.yaml and edit. Values wrapped in ${...} are read from
+# environment variables at run time -- put real secrets in a .env file or
+# your CI's secret store, never in this file.
+
+# "mock" generates deterministic fake prices (good for trying the service
+# out and for tests). "renfe" scrapes the real renfe.com search -- see
+# src/cheaptrains/providers/renfe.py for setup and caveats.
+provider: mock
+
+weekend:
+  # Days to consider for departure: FRI (evening before) and/or SAT.
+  outbound_days: [FRI, SAT]
+  # Days to consider for the return leg: SUN and/or MON.
+  return_days: [SUN, MON]
+  # How many upcoming weekends to check each run.
+  lookahead_weekends: 8
+
+routes:
+  - name: "Madrid -> Barcelona"
+    origin: "Madrid"
+    destination: "Barcelona"
+    max_total_price: 60
+    currency: EUR
+
+  - name: "Madrid -> Sevilla"
+    origin: "Madrid"
+    destination: "Sevilla"
+    max_total_price: 45
+    currency: EUR
+
+  - name: "Barcelona -> Valencia"
+    origin: "Barcelona"
+    destination: "Valencia"
+    max_total_price: 35
+    currency: EUR
+
+notifications:
+  telegram:
+    enabled: true
+    bot_token: "${TELEGRAM_BOT_TOKEN}"
+    chat_id: "${TELEGRAM_CHAT_ID}"
+
+  email:
+    enabled: false
+    smtp_host: smtp.gmail.com
+    smtp_port: 587
+    username: "${SMTP_USERNAME}"
+    password: "${SMTP_PASSWORD}"
+    from_addr: "${SMTP_USERNAME}"
+    to_addrs:
+      - "you@example.com"
+
+# Where sent-alert history is kept, to avoid re-notifying about the same
+# fare on every run (only price drops re-trigger an alert).
+state_file: "state.sqlite3"

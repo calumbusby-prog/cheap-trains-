@@ -1,0 +1,48 @@
+name: Check cheap weekend train fares
+
+on:
+  schedule:
+    # Every 3 hours. Adjust to taste -- more frequent runs find drops
+    # sooner but hit renfe.com more (and mock mode has no reason to run
+    # this often at all).
+    - cron: "17 */3 * * *"
+  workflow_dispatch: {}
+
+jobs:
+  check-prices:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install playwright
+          playwright install --with-deps chromium
+
+      # Keeps state.sqlite3 (the "already alerted" record) between runs so
+      # we don't re-notify about a fare we already sent.
+      - name: Restore alert state
+        uses: actions/cache/restore@v4
+        with:
+          path: state.sqlite3
+          key: cheaptrains-state
+
+      - name: Run price check
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          SMTP_USERNAME: ${{ secrets.SMTP_USERNAME }}
+          SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+        run: python -m cheaptrains.cli --config config.yaml
+
+      - name: Save alert state
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: state.sqlite3
+          key: cheaptrains-state
