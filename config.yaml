@@ -5,7 +5,7 @@
 # "mock" generates deterministic fake prices (good for trying the service
 # out and for tests). "renfe" scrapes the real renfe.com search -- see
 # src/cheaptrains/providers/renfe.py for setup and caveats.
-provider: mock
+provider: renfe
 
 weekend:
   # Days to consider for departure: FRI (evening before) and/or SAT.
@@ -36,19 +36,19 @@ routes:
 
 notifications:
   telegram:
-    enabled: true
+    enabled: false
     bot_token: "${TELEGRAM_BOT_TOKEN}"
     chat_id: "${TELEGRAM_CHAT_ID}"
 
   email:
-    enabled: false
+    enabled: true
     smtp_host: smtp.gmail.com
     smtp_port: 587
     username: "${SMTP_USERNAME}"
     password: "${SMTP_PASSWORD}"
     from_addr: "${SMTP_USERNAME}"
     to_addrs:
-      - "you@example.com"
+      - "calumbusby@gmail.com"
 
 # Where sent-alert history is kept, to avoid re-notifying about the same
 # fare on every run (only price drops re-trigger an alert).
