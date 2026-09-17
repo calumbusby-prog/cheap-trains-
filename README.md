@@ -37,9 +37,9 @@ without touching the scheduling/dedup logic.
 ## Setup
 
 ```bash
-pip install -r requirements.txt
+pip install -e .
 # only if you're using provider: renfe
-pip install playwright && playwright install chromium
+pip install -e ".[renfe]" && playwright install chromium
 
 cp config.example.yaml config.yaml   # already done in this repo; edit routes/thresholds
 cp .env.example .env                 # fill in secrets, then `export $(cat .env | xargs)`

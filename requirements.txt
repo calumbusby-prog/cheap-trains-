@@ -1,5 +1,0 @@
-pyyaml>=6.0
-requests>=2.31
-
-# Only needed if provider: renfe in config.yaml
-# playwright>=1.40
